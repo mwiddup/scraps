@@ -1,5 +1,7 @@
-// Some guy called Peter made this. Found on the internet, no known author
-// maybe github/lmmx/  -- but probably not
+// This program will look through a directory for all file
+// *install.sh or *install_nn.sh and pull out their contents
+// It will try and turn it in to absolute paths and find the
+// files mentioned. If they're not there, messages are shown
 // pgrep.go
 // Copyright (C) 2016 vagrant <vagrant@vagrant-ubuntu-trusty-64>
 //
@@ -18,13 +20,12 @@ import (
 	"strings"
 )
 
-func parse_args() (file, pat string, path string) {
-	if len(os.Args) < 3 {
+func parse_args() (pat string, path string) {
+	if len(os.Args) < 2 {
 		log.Fatal("usage: pgrep <file_name> <pattern>")
 	}
-	file = os.Args[1]
+	path = os.Args[1]
 	pat = os.Args[2]
-	path = os.Args[3]
 	return
 }
 
@@ -50,28 +51,27 @@ func grepFile(file string, pat []byte) []string {
 }
 
 func main() {
-	file, pat, root := parse_args()
+	pat, root := parse_args()
 	visit := func(path string, f os.FileInfo, err error) error {
 		if !f.IsDir() && (strings.HasSuffix(f.Name(), "install.sh") || strings.HasSuffix(f.Name(), "install_nn.sh")) {
-			//fmt.Printf("Checking: %s\n", path)
 			grepped := grepFile(path, []byte(pat))
 			fault := false
 			for i := range grepped {
-				com := strings.Trim(grepped[i], " ")
+				com := strings.Trim(grepped[i], " ") //clean up the string, remove whitespace
 				n := strings.LastIndex(com, " ") + 1 //index of next item after string
 				l := len(com)
-				if _, err := os.Stat(root + com[n:l-1]); os.IsNotExist(err) {
-					if !fault {
+				if _, err := os.Stat(root + com[n:l-1]); os.IsNotExist(err) { //does the file exist
+					if !fault { //is there a problem in this file, fault print file name once
 						fmt.Printf("Problem with: %s\n", path)
 						fault = true
 					}
-					fmt.Printf("  File: %s\n", root+com[n:l-1])
+					fmt.Printf("  File: %s\n", root+com[n:l-1]) //substringing
 				}
 			}
 		}
 		return nil
 	}
-	fmt.Printf(file, pat, root)
+	fmt.Printf("Patern: %s Directory: %s\n", pat, root)
 	err := filepath.Walk(root, visit)
 	if err != nil {
 		fmt.Printf("Done broke")
