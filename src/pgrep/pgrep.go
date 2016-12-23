@@ -49,40 +49,29 @@ func grepFile(file string, pat []byte) []string {
 	return patValue
 }
 
-//func visit(path string, f os.FileInfo, err error, pat string) error {
-//	if !f.IsDir() && (strings.HasSuffix(f.Name(), "install.sh") || strings.HasSuffix(f.Name(), "install_nn.sh")) {
-//		fmt.Printf("Checking: %s\n", path)
-//		grepped := grepFile(path, []byte(pat))
-//		for i := range grepped {
-//			n := strings.LastIndex(grepped[i], " ") + 1 //index of next item after string
-//			l := len(grepped[i])
-//			fmt.Println(grepped[i][n : l-1])
-//		}
-//	}
-//	return nil
-//}
-
 func main() {
 	file, pat, root := parse_args()
 	visit := func(path string, f os.FileInfo, err error) error {
 		if !f.IsDir() && (strings.HasSuffix(f.Name(), "install.sh") || strings.HasSuffix(f.Name(), "install_nn.sh")) {
-			fmt.Printf("Checking: %s\n", path)
+			//fmt.Printf("Checking: %s\n", path)
 			grepped := grepFile(path, []byte(pat))
+			fault := false
 			for i := range grepped {
-				n := strings.LastIndex(grepped[i], " ") + 1 //index of next item after string
-				l := len(grepped[i])
-				fmt.Println("\t", grepped[i][n:l-1])
+				com := strings.Trim(grepped[i], " ")
+				n := strings.LastIndex(com, " ") + 1 //index of next item after string
+				l := len(com)
+				if _, err := os.Stat(root + com[n:l-1]); os.IsNotExist(err) {
+					if !fault {
+						fmt.Printf("Problem with: %s\n", path)
+						fault = true
+					}
+					fmt.Printf("  File: %s\n", root+com[n:l-1])
+				}
 			}
 		}
 		return nil
 	}
 	fmt.Printf(file, pat, root)
-	//grepped := grepFile(file, []byte(pat))
-	//for i := range grepped {
-	//	n := strings.LastIndex(grepped[i], " ") + 1 //index of next item after string
-	//	l := len(grepped[i])
-	//	fmt.Println(grepped[i][n : l-1])
-	//}
 	err := filepath.Walk(root, visit)
 	if err != nil {
 		fmt.Printf("Done broke")
