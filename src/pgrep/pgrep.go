@@ -75,22 +75,23 @@ func main() {
 
 func checkFiles() {
 	pat, root := parse_args()
+	begin := time.Now()
 	allPass := true
 	visit := func(path string, f os.FileInfo, err error) error {
 		if !f.IsDir() && (strings.HasSuffix(f.Name(), "install.sh") || strings.HasSuffix(f.Name(), "install_nn.sh")) {
 			grepped := grepFile(path, []byte(pat))
 			fault := false
+			tme := grepped.elapsed
 			fmt.Printf("=== RUN   %s\n", path)
 			for i := range grepped.patLine {
 				com := strings.Trim(grepped.patLine[i].file, " ") //clean up the string, remove whitespace
 				lne := grepped.patLine[i].line
-				tme := grepped.elapsed
 				n := strings.LastIndex(com, " ") + 1 //index of next item after string
 				l := len(com)
 				if _, err := os.Stat(root + com[n:l-1]); os.IsNotExist(err) { //does the file exist
 					if !fault { //is there a problem in this file, fault print file name once
 						//fmt.Printf("=== RUN   %s\n", path)
-						fmt.Printf("--- FAIL: %s (%s)\n", path, tme)
+						fmt.Printf("--- FAIL: %s (%.2f seconds)\n", path, tme.Seconds())
 						fault = true
 						allPass = false
 					}
@@ -98,7 +99,7 @@ func checkFiles() {
 				}
 			}
 			if !fault {
-				fmt.Printf("--- PASS: %s (0.00s)\n", path)
+				fmt.Printf("--- PASS: %s (%.2f seconds)\n", path, tme.Seconds())
 			}
 		}
 		return nil
@@ -107,8 +108,10 @@ func checkFiles() {
 	if err != nil {
 		fmt.Printf("Done broke")
 	}
+	end := time.Since(begin)
 	if !allPass {
-		fmt.Printf("FAIL\nexit status 1\nFAIL     Check Files\t0.008s\n")
+		fmt.Printf("FAIL\nexit status 1\nFAIL     Check Files\t%.3fs\n", end.Seconds())
+	} else {
+		fmt.Printf("PASS\nexit status 0\nPASS     Check Files\t%.3fs\n", end.Seconds())
 	}
-
 }
