@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-func parse_args() (pat string, path string) {
+func parse_args() (pat string, path string) { //checks for input, 2 values
 	if len(os.Args) < 2 {
 		log.Fatal("usage: pgrep <file_name> <pattern>")
 	}
@@ -40,14 +40,13 @@ type Results struct {
 	patLine []patLine
 }
 
-//basic grep functionallity, returns a slice of each matched line
+//basic grep functionallity, returns a Results struct of each matched line
+//includes matched line, line number in file, time taken to grab all lines
 //no filtering or utilities performed
 func grepFile(file string, pat []byte) Results {
-	var patValue Results
-	var myPat []patLine //this is the 0 length slice
-	//patValue.patLine = make([]patLine, 0)
-	//myPat := patLine{file: scanner.Text(), line: i}
-	start := time.Now()
+	var patValue Results //create a new Results struct
+	var myPat []patLine  //this is the 0 length slice of patLine structs
+	start := time.Now()  //everyone loves timing things, grab a start time
 	f, err := os.Open(file)
 	if err != nil {
 		log.Fatal(err)
@@ -56,20 +55,20 @@ func grepFile(file string, pat []byte) Results {
 	scanner := bufio.NewScanner(f)
 	i := 0
 	for scanner.Scan() {
-		i++
+		i++ //this counter gives us the current line number being scanner'ed
 		if bytes.Contains(scanner.Bytes(), pat) {
 			myPat = append(myPat, patLine{file: scanner.Text(), line: i})
-		}
+		} //found something, at the new struct to the slice of structs
 	}
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
-	patValue.elapsed = time.Since(start)
-	patValue.patLine = myPat
+	patValue.elapsed = time.Since(start) //total time taken set in the Results struct
+	patValue.patLine = myPat             //set the slice of patLine structs in the Results struct
 	return patValue
 }
 
-func main() {
+func main() { //where the magic happens, but does nothing except call stubs
 	checkFiles()
 }
 
@@ -78,8 +77,8 @@ func checkFiles() {
 	begin := time.Now()
 	allPass := true
 	visit := func(path string, f os.FileInfo, err error) error {
-		if !f.IsDir() && (strings.HasSuffix(f.Name(), "install.sh") || strings.HasSuffix(f.Name(), "install_nn.sh")) {
-			grepped := grepFile(path, []byte(pat))
+		if !f.IsDir() && (strings.HasSuffix(f.Name(), "install.sh") || strings.HasSuffix(f.Name(), "install_nn.sh")) { //does this file fit the filter (install*.sh)
+			grepped := grepFile(path, []byte(pat)) //go and grep the contents of the file
 			fault := false
 			tme := grepped.elapsed
 			fmt.Printf("=== RUN   %s\n", path)
@@ -90,10 +89,9 @@ func checkFiles() {
 				l := len(com)
 				if _, err := os.Stat(root + com[n:l-1]); os.IsNotExist(err) { //does the file exist
 					if !fault { //is there a problem in this file, fault print file name once
-						//fmt.Printf("=== RUN   %s\n", path)
 						fmt.Printf("--- FAIL: %s (%.2f seconds)\n", path, tme.Seconds())
 						fault = true
-						allPass = false
+						allPass = false //one fail means we all fail
 					}
 					fmt.Printf("\tFile:%03d: %s\n", lne, root+com[n:l-1]) //substringing
 				}
@@ -112,6 +110,6 @@ func checkFiles() {
 	if !allPass {
 		fmt.Printf("FAIL\nexit status 1\nFAIL     Check Files\t%.3fs\n", end.Seconds())
 	} else {
-		fmt.Printf("PASS\nexit status 0\nPASS     Check Files\t%.3fs\n", end.Seconds())
+		fmt.Printf("PASS\nok\tCheck Files\t%.3fs\n", end.Seconds())
 	}
 }
