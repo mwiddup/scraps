@@ -74,6 +74,10 @@ if len(difference) > 0:
     print "FAIL"
     print "exit status 1"
     print "FAIL\tExtra Files\t"+str(round(etime,3))+"s"
+else:
+    print "--- PASS: Extra Files ("+str(round(etime,2))+" seconds)"
+    print "PASS"
+    print "ok\tExtra Files\t"+str(round(etime,3))+"s"
 
 """
 print "Number of objects: " + str(len(objects))
