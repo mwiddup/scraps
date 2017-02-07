@@ -3,6 +3,9 @@
 // It will try and turn it in to absolute paths and find the
 // files mentioned. If they're not there, messages are shown
 // pgrep.go
+//
+// Now relies on a modified version of go-junit-report to handle
+// messages for Failed tests
 // Copyright (C) 2016 vagrant <vagrant@vagrant-ubuntu-trusty-64>
 //
 // Distributed under terms of the MIT license.
@@ -58,7 +61,7 @@ func grepFile(file string, pat []byte) Results {
 		i++ //this counter gives us the current line number being scanner'ed
 		if bytes.Contains(scanner.Bytes(), pat) {
 			myPat = append(myPat, patLine{file: scanner.Text(), line: i})
-		} //found something, at the new struct to the slice of structs
+		} //^found something, add the new struct to the slice of structs
 	}
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -81,23 +84,23 @@ func checkFiles() {
 			grepped := grepFile(path, []byte(pat)) //go and grep the contents of the file
 			fault := false
 			tme := grepped.elapsed
-			fmt.Printf("=== RUN   %s\n", path)
+			fmt.Printf("=== RUN   %s\n", strings.TrimPrefix(path, root))
 			for i := range grepped.patLine {
-				com := strings.Trim(grepped.patLine[i].file, " ") //clean up the string, remove whitespace
+				com := strings.TrimSpace(grepped.patLine[i].file) //clean up the string, remove whitespace
 				lne := grepped.patLine[i].line
 				n := strings.LastIndex(com, " ") + 1 //index of next item after string
 				l := len(com)
 				if _, err := os.Stat(root + com[n:l-1]); os.IsNotExist(err) { //does the file exist
 					if !fault { //is there a problem in this file, fault print file name once
-						fmt.Printf("--- FAIL: %s (%.2f seconds)\n", path, tme.Seconds())
+						fmt.Printf("--- FAIL: %s (%.2f seconds):The following files are referenced in the installer (%s) but missing from the filesystem\n", strings.TrimPrefix(path, root), tme.Seconds(), strings.TrimPrefix(path, root))
 						fault = true
 						allPass = false //one fail means we all fail
 					}
-					fmt.Printf("\tFile:%03d: %s\n", lne, root+com[n:l-1]) //substringing
+					fmt.Printf("\tLine:%03d: %s\n", lne, com[n:l-1]) //substringing
 				}
 			}
 			if !fault {
-				fmt.Printf("--- PASS: %s (%.2f seconds)\n", path, tme.Seconds())
+				fmt.Printf("--- PASS: %s (%.2f seconds)\n", strings.TrimPrefix(path, root), tme.Seconds())
 			}
 		}
 		return nil
@@ -108,8 +111,8 @@ func checkFiles() {
 	}
 	end := time.Since(begin)
 	if !allPass {
-		fmt.Printf("FAIL\nexit status 1\nFAIL     Check Files\t%.3fs\n", end.Seconds())
+		fmt.Printf("FAIL\nexit status 1\nFAIL     Check Files \t%.3fs\n", end.Seconds())
 	} else {
-		fmt.Printf("PASS\nok\tCheck Files\t%.3fs\n", end.Seconds())
+		fmt.Printf("PASS\nok\tCheck Files \t%.3fs\n", end.Seconds())
 	}
 }
