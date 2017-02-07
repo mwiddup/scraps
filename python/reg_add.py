@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
@@ -29,5 +29,5 @@ for line in fileinput.input(input_file, inplace=True):
     if m:
         replace=int(m.group(2)) + 1 
         line = line.replace(m.group(0), m.group(1)+str(replace))
-    print line,
+    print(line, end="")
 
