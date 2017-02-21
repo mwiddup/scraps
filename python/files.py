@@ -44,11 +44,35 @@ def grep_clean(file_list):
     
     for file in file_list:
          for line in open(file, 'r'):
-             if search(pattern, line):
+             if search(pat, line):
                  m = search(pat, line)
                  expected.append(m.group(1))
 
     return expected
+
+"""
+This bit goes through those left over files and tries to identify the last
+person to check them in to SVN via the SVN keyword for Author
+Looks like we've got some almost identical code going on here
+"""
+def grep_auth(file_list):
+    fileauth = []
+    pat = compile('\$Author:\s+(.*)\s+\$')
+
+    for file in file_list:
+        isauth = False
+        for line in open(root_path + file, 'r'):
+            if search(pat, line) and not isauth:
+                m = search(pat, line)
+                author =  m.group(1)
+                isauth = True
+
+        if not isauth:
+            author = "Author not found, fix SVN header"
+
+        fileauth.append(file + '|' + author)
+
+    return fileauth
 
 
 """
@@ -105,13 +129,17 @@ to ensure their not used
 """
 difference = (set(objects) - set(expected))
 difference = (set(difference) - set(grep_leftovers(installers, difference)))
+difference = grep_auth(difference)
 etime = time() - stime
+
 
 print "=== RUN   Extra Files"
 if len(difference) > 0:
     print "--- FAIL: Extra Files ("+str(round(etime,2))+" seconds):The following files are in the tag, not in an installer"
     for t in sorted(difference):
-       print '\t' + t
+        filemiss = t.split('|',1)[0]
+        auth = t.split('|',1)[1]
+        print '\t'+ '(' + auth + "): " +  filemiss  
     print "FAIL"
     print "exit status 1"
     print "FAIL\tExtra Files\t"+str(round(etime,3))+"s"
@@ -126,3 +154,4 @@ print "Number of installers: " + str(len(installers))
 print "Number of expected: " + str(len(expected))
 print "Number of difference: " + str(len(difference))
 """
+
