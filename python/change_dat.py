@@ -52,7 +52,7 @@ This is doing way too many things
 """
 def replace_pattern(file_list, pattern_match, pattern_replace, pattern_ignore, comment):
     for f_obj in file_list:
-        with open(f_obj, 'r+b') as f:
+        with open(f_obj, 'r+') as f:
             input_str = f.read()
             if find_pattern(input_str, pattern_ignore).m: #checks to see if we should ignore the file
                 i, j=0, 0
@@ -126,11 +126,11 @@ def append_block_grants(mlstr, block, patterns):
         if m1:
             block = block.replace("#SCHEMA#", m1.group(2).upper())
             block = block.replace("#OBJECT#", m1.group(3).upper())
-            mlstr = mlstr + '\r\n' + block
+            mlstr = mlstr + '\n' + block
         elif m2:
             block = block.replace("#SCHEMA#", m2.group(2).upper())
             block = block.replace("#OBJECT#", m2.group(3).upper())
-            mlstr = mlstr + '\r\n' + block
+            mlstr = mlstr + '\n' + block
         else:
             print ("Didn't find a schema.procname")
     else:
@@ -145,9 +145,10 @@ def strip_grants(mlstr):
 
     return mlstr
 
+
 def remove_all_grants_from_all(file_list):
     for f_obj in file_list:
-        with open(f_obj, 'r+b') as f:
+        with open(f_obj, 'r+') as f:
             input_str = f.read()
             if find_pattern(input_str, my_vars.grant_pat_ignore).m: #checks to see if we should ignore the file
                 input_str = strip_grants(input_str)
@@ -180,3 +181,5 @@ file_type = "^tb.*ddl$"
 
 full_filtered_files = get_filtered_files(my_vars.root_path, file_type)
 replace_pattern(full_filtered_files, my_vars.tb_pat_match, my_vars.tb_pat_replace, my_vars.grant_pat_ignore, my_vars.comment_grant_add)
+
+print("\nDONE")
